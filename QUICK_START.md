@@ -2,6 +2,12 @@
 
 ## 🚀 Fast Installation
 
+### Method 1: WGET One-Liner (Recommended)
+```bash
+wget -O - https://raw.githubusercontent.com/baakgwai/OpenWRT_WAN-Check-Restart/main/wget_install.sh | sh
+```
+
+### Method 2: Manual Installation
 1. **Download the repository** to your OpenWRT router
 2. **Run the test script** to verify compatibility:
    ```bash
