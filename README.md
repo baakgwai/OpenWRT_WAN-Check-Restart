@@ -6,10 +6,10 @@ A simple, reliable solution for automatically monitoring and restarting WAN inte
 
 ```bash
 # Install directly from GitHub
-wget -O - https://raw.githubusercontent.com/commanduser/OpenWRT_WAN-Check-Restart/main/install.sh | sh
+wget -O - https://raw.githubusercontent.com/baakgwai/OpenWRT_WAN-Check-Restart/main/install.sh | sh
 
 # Uninstall
-wget -O - https://raw.githubusercontent.com/commanduser/OpenWRT_WAN-Check-Restart/main/uninstall.sh | sh
+wget -O - https://raw.githubusercontent.com/baakgwai/OpenWRT_WAN-Check-Restart/main/uninstall.sh | sh
 ```
 
 ## What It Does
