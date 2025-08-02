@@ -1,8 +1,12 @@
 # OpenWRT WAN Check Configuration
 # Edit these settings to customize the behavior
 
-# Ping target (IP address to test connectivity)
-PING_TARGET="8.8.8.8"
+# Ping targets (IP addresses to test connectivity)
+# Multiple targets can be specified - script will try each until one succeeds
+# Google DNS: 8.8.8.8, 8.8.4.4
+# Cloudflare DNS: 1.1.1.1, 1.0.0.1
+# Quad9 DNS: 9.9.9.9, 149.112.112.112
+PING_TARGETS="8.8.8.8 1.1.1.1 8.8.4.4 1.0.0.1"
 
 # Ping settings
 PING_COUNT=3          # Number of ping packets

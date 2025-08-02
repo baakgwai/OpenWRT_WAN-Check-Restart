@@ -9,7 +9,7 @@ if [ -f "$CONFIG_FILE" ]; then
     . "$CONFIG_FILE"
 else
     # Default configuration
-    PING_TARGET="8.8.8.8"
+    PING_TARGETS="8.8.8.8 1.1.1.1"  # Google DNS and Cloudflare DNS
     PING_COUNT=3
     PING_TIMEOUT=1
     RESTART_DELAY=3
@@ -17,9 +17,6 @@ else
     VERBOSE_LOGGING=0
     INTERFACE_PATTERN="wan"
     MAX_CONSECUTIVE_FAILURES=3
-    ENABLE_EMAIL_NOTIFICATIONS=0
-    EMAIL_RECIPIENT=""
-    EMAIL_SUBJECT="OpenWRT WAN Check Alert"
 fi
 
 # Log function for consistent logging
@@ -27,7 +24,6 @@ log_message() {
     logger -t "$LOG_TAG" "$1"
     [ "$VERBOSE_LOGGING" -eq 1 ] && echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
-
 
 # Function to check consecutive failures
 check_consecutive_failures() {
@@ -38,7 +34,6 @@ check_consecutive_failures() {
         local failures=$(cat "$failure_file" 2>/dev/null || echo "0")
         if [ "$failures" -ge "$MAX_CONSECUTIVE_FAILURES" ]; then
             log_message "WARNING: $iface has failed $failures consecutive times, skipping restart"
-            send_email_notification "WAN interface $iface has failed $failures consecutive times and restart has been skipped"
             return 1
         fi
     fi
@@ -63,6 +58,28 @@ update_failure_count() {
     fi
 }
 
+# Function to test connectivity with multiple targets
+test_connectivity() {
+    local device="$1"
+    local interface="$2"
+    local ping_success=false
+    
+    # Test each ping target
+    for target in $PING_TARGETS; do
+        log_message "Testing $interface ($device) with ping to $target"
+        ping -I "$device" -c "$PING_COUNT" -W "$PING_TIMEOUT" "$target" >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            log_message "$interface ($device) ping test passed with $target"
+            ping_success=true
+            break
+        else
+            log_message "$interface ($device) ping test failed with $target"
+        fi
+    done
+    
+    echo "$ping_success"
+}
+
 # Main execution
 log_message "Starting WAN connectivity check for pattern: $INTERFACE_PATTERN"
 
@@ -74,20 +91,16 @@ for IFACE in $(ubus list network.interface.* | grep -i "$INTERFACE_PATTERN" | cu
     # Skip if device name is empty
     [ -z "$DEVICE" ] && continue
 
-    log_message "Checking interface $IFACE ($DEVICE) with ping to $PING_TARGET"
-
     # Check consecutive failures before proceeding
     if ! check_consecutive_failures "$IFACE"; then
         continue
     fi
 
-    # Ping using specific interface
-    ping -I "$DEVICE" -c "$PING_COUNT" -W "$PING_TIMEOUT" "$PING_TARGET" >/dev/null 2>&1
-    ping_result=$?
+    # Test connectivity with multiple targets
+    ping_result=$(test_connectivity "$DEVICE" "$IFACE")
 
-    if [ $ping_result -ne 0 ]; then
-        log_message "$IFACE ($DEVICE) failed ping test, restarting interface"
-        send_email_notification "WAN interface $IFACE ($DEVICE) failed ping test and is being restarted"
+    if [ "$ping_result" = "false" ]; then
+        log_message "$IFACE ($DEVICE) failed all ping tests, restarting interface"
         
         ifdown "$IFACE"
         sleep "$RESTART_DELAY"
@@ -96,7 +109,6 @@ for IFACE in $(ubus list network.interface.* | grep -i "$INTERFACE_PATTERN" | cu
         log_message "$IFACE restart completed"
         update_failure_count "$IFACE" 0
     else
-        log_message "$IFACE ($DEVICE) ping test passed"
         update_failure_count "$IFACE" 1
     fi
 done
