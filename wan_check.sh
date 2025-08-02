@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# OpenWRT WAN Connectivity Check and Restart Script (Enhanced Version)
-# This script checks all WAN interfaces and restarts them if they fail ping tests
+# OpenWRT WAN Connectivity Check and Restart Script
+# A single, comprehensive solution for monitoring and restarting WAN interfaces
 
 # Load configuration if available
 CONFIG_FILE="/root/wan_check_config.sh"
@@ -14,10 +14,12 @@ else
     PING_TIMEOUT=1
     RESTART_DELAY=3
     LOG_TAG="wan_check"
-    VERBOSE_LOGGING=1
+    VERBOSE_LOGGING=0
     INTERFACE_PATTERN="wan"
-    MAX_CONSECUTIVE_FAILURES=0
+    MAX_CONSECUTIVE_FAILURES=3
     ENABLE_EMAIL_NOTIFICATIONS=0
+    EMAIL_RECIPIENT=""
+    EMAIL_SUBJECT="OpenWRT WAN Check Alert"
 fi
 
 # Log function for consistent logging
@@ -26,13 +28,6 @@ log_message() {
     [ "$VERBOSE_LOGGING" -eq 1 ] && echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# Email notification function
-send_email_notification() {
-    if [ "$ENABLE_EMAIL_NOTIFICATIONS" -eq 1 ] && [ -n "$EMAIL_RECIPIENT" ]; then
-        local message="$1"
-        echo "$message" | mail -s "$EMAIL_SUBJECT" "$EMAIL_RECIPIENT" 2>/dev/null || true
-    fi
-}
 
 # Function to check consecutive failures
 check_consecutive_failures() {
@@ -91,7 +86,7 @@ for IFACE in $(ubus list network.interface.* | grep -i "$INTERFACE_PATTERN" | cu
     ping_result=$?
 
     if [ $ping_result -ne 0 ]; then
-        log_message "$IFACE ($DEVICE) failed ping test, restarting DHCP client"
+        log_message "$IFACE ($DEVICE) failed ping test, restarting interface"
         send_email_notification "WAN interface $IFACE ($DEVICE) failed ping test and is being restarted"
         
         ifdown "$IFACE"

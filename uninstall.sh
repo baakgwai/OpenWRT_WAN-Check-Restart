@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# OpenWRT WAN Check Restart - Uninstall Script
-# This script removes the WAN connectivity check and restart functionality
+# OpenWRT WAN Check Restart - Uninstallation Script
+# Removes the WAN connectivity check and restart functionality
 
 set -e
 
@@ -34,20 +34,20 @@ log_info "Uninstalling OpenWRT WAN Check Restart..."
 
 # Remove cron job
 log_info "Removing cron job..."
-crontab -l 2>/dev/null | grep -v "check_all_wan.sh" | crontab - || true
+crontab -l 2>/dev/null | grep -v "wan_check.sh" | crontab -
 
-# Remove script file
-log_info "Removing script file..."
-if [ -f "/root/check_all_wan.sh" ]; then
-    rm -f /root/check_all_wan.sh
-    log_info "✓ Script file removed"
-else
-    log_warn "Script file not found at /root/check_all_wan.sh"
-fi
+# Remove script files
+log_info "Removing script files..."
+rm -f /root/wan_check.sh
+rm -f /root/wan_check_config.sh
+
+# Clean up temporary files
+log_info "Cleaning up temporary files..."
+rm -f /tmp/wan_check_failures_*
 
 # Restart cron service
 log_info "Restarting cron service..."
 /etc/init.d/cron restart
 
 log_info "Uninstallation completed successfully!"
-log_info "The WAN check functionality has been removed from your system" 
+log_info "All WAN check functionality has been removed" 
